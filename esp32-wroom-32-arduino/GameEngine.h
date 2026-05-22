@@ -88,8 +88,8 @@ inline void runSnake() {
 // --- 5. 俄罗斯方块核心逻辑 ---
 inline bool checkTetCol(int t, int r, int x, int y) {
     for(int i=0; i<4; i++){
-        int px = x + pgm_read_byte(&shapes[t][r][i][0]);
-        int py = y + pgm_read_byte(&shapes[t][r][i][1]);
+        int px = x + shapes[t][r][i][0];
+        int py = y + shapes[t][r][i][1];
         if(px < BOARD_LEFT || px > BOARD_RIGHT || py >= 16 || (py >= 0 && tetrisField[py][px])) return true;
     }
     return false;
@@ -123,8 +123,8 @@ inline void runTetris() {
         if(!checkTetCol(pType, pRot, pX, pY + 1)) pY++;
         else {
             for(int i=0; i<4; i++) {
-                int px = pX + pgm_read_byte(&shapes[pType][pRot][i][0]);
-                int py = pY + pgm_read_byte(&shapes[pType][pRot][i][1]);
+                int px = pX + shapes[pType][pRot][i][0];
+                int py = pY + shapes[pType][pRot][i][1];
                 if(py >= 0) tetrisField[py][px] = pType + 1;
             }
             for(int y = 15; y >= 0; y--) {
@@ -148,7 +148,7 @@ inline void runTetris() {
         for(int x=BOARD_LEFT; x<=BOARD_RIGHT; x++) 
             if(tetrisField[y][x]) drawPixel(x, y, getTetColor(tetrisField[y][x]-1));
     for(int i=0; i<4; i++) 
-        drawPixel(pX + pgm_read_byte(&shapes[pType][pRot][i][0]), pY + pgm_read_byte(&shapes[pType][pRot][i][1]), getTetColor(pType));
+        drawPixel(pX + shapes[pType][pRot][i][0], pY + shapes[pType][pRot][i][1], getTetColor(pType));
 }
 
 #endif

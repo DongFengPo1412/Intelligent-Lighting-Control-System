@@ -34,7 +34,7 @@ static void drawPixel(int x, int y, CRGB color) {
  */
 static void drawDigit(int n, int xO, int yO, CRGB c) {
     for (int i = 0; i < 5; i++) {
-        uint8_t row = pgm_read_byte(&numFont[n % 10][i]);
+        uint8_t row = numFont[n % 10][i];
         for (int j = 0; j < 3; j++) {
             if (row & (0x4 >> j)) drawPixel(xO + j, yO + i, c);
         }
@@ -147,7 +147,7 @@ static void runDisplayEffects(int mode) {
 inline void initDisplay() {
     // 根据 Config.h 中的引脚和数量初始化 FastLED
     FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
-    FastLED.setMaxPowerInVoltsAndMilliamps(5, 1500);
+    FastLED.setMaxPowerInVoltsAndMilliamps(MAX_POWER_VOLTS, MAX_POWER_MA);
     FastLED.setBrightness(BRIGHTNESS);
     FastLED.clear();
     FastLED.show();

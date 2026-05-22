@@ -17,22 +17,21 @@ extern int pType, pRot, pX, pY;
 extern bool snakeStarted;
 extern bool tetrisStarted;
 
-// --- 2. 定义 App 按钮组件 ---
-BlinkerButton BtnW("W"); // 上 / 旋转
-BlinkerButton BtnS("S"); // 下 / 加速
-BlinkerButton BtnA("A"); // 左
-BlinkerButton BtnD("D"); // 右
+// --- 2. 声明 App 按钮组件 ---
+extern BlinkerButton BtnW; // 上 / 旋转
+extern BlinkerButton BtnS; // 下 / 加速
+extern BlinkerButton BtnA; // 左
+extern BlinkerButton BtnD; // 右
 
-BlinkerButton BtnE("E"); // 快捷键：启动贪吃蛇
-BlinkerButton BtnF("F"); // 快捷键：启动俄罗斯方块
+extern BlinkerButton BtnE; // 快捷键：启动贪吃蛇
+extern BlinkerButton BtnF; // 快捷键：启动俄罗斯方块
 
-// --- 3. 按键回调函数 ---
-// 🌟🌟🌟【核心微调】：擦除所有 inline 关键字，防止内联化导致函数指针绑定失败
+// --- 3. 按键回调函数 (使用 inline 防止多重定义链接报错) ---
 
 /**
  * @brief W 键回调：贪吃蛇向上，俄罗斯方块旋转
  */
-void buttonW_callback(const String & s) {
+inline void buttonW_callback(const String & s) {
     if (currentMode == 19 && snakeStarted) { 
         if (sDy != 1) { sDx = 0; sDy = -1; } 
     } 
@@ -45,7 +44,7 @@ void buttonW_callback(const String & s) {
 /**
  * @brief S 键回调：贪吃蛇向下，俄罗斯方块下沉
  */
-void buttonS_callback(const String & s) {
+inline void buttonS_callback(const String & s) {
     if (currentMode == 19 && snakeStarted) { 
         if (sDy != -1) { sDx = 0; sDy = 1; }  
     } 
@@ -57,7 +56,7 @@ void buttonS_callback(const String & s) {
 /**
  * @brief A 键回调：贪吃蛇向左，俄罗斯方块向左
  */
-void buttonA_callback(const String & s) {
+inline void buttonA_callback(const String & s) {
     if (currentMode == 19 && snakeStarted) { 
         if (sDx != 1) { sDx = -1; sDy = 0; } 
     } 
@@ -69,7 +68,7 @@ void buttonA_callback(const String & s) {
 /**
  * @brief D 键回调：贪吃蛇向右，俄罗斯方块向右
  */
-void buttonD_callback(const String & s) {
+inline void buttonD_callback(const String & s) {
     if (currentMode == 19 && snakeStarted) { 
         if (sDx != -1) { sDx = 1; sDy = 0; }  
     } 
@@ -81,7 +80,7 @@ void buttonD_callback(const String & s) {
 /**
  * @brief E 键回调：切换到贪吃蛇模式（带音乐随动硬锁保护）
  */
-void buttonE_callback(const String & s) {
+inline void buttonE_callback(const String & s) {
     // 🌟 音乐随动中，强制封锁手机端切模误触，死守大动脉数据流稳定
     if (currentMode == 15) {
         Serial.println(">>> [Blinker]: 音乐随动中，已拦截 App 切模操作");
@@ -94,7 +93,7 @@ void buttonE_callback(const String & s) {
 /**
  * @brief F 键回调：切换到俄罗斯方块模式（带音乐随动硬锁保护）
  */
-void buttonF_callback(const String & s) {
+inline void buttonF_callback(const String & s) {
     if (currentMode == 15) {
         Serial.println(">>> [Blinker]: 音乐随动中，已拦截 App 切模操作");
         return; 

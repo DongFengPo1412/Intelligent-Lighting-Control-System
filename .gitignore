@@ -15,7 +15,7 @@ main/assets/lang_config.h
 esp32-s3r16n8-idf/main/assets/lang_config.h
 main/mmap_generate_emoji.h
 esp32-s3r16n8-idf/main/mmap_generate_emoji.h
-esp32-wroom-32-arduino/Config.h
+esp32-wroom-32-arduino/Config.private.h
 .DS_Store
 .cache
 __pycache__/

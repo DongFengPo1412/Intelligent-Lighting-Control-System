@@ -39,7 +39,7 @@
 
 #define OPUS_FRAME_DURATION_MS 60
 #define MAX_ENCODE_TASKS_IN_QUEUE 2
-#define MAX_PLAYBACK_TASKS_IN_QUEUE 2
+#define MAX_PLAYBACK_TASKS_IN_QUEUE 4
 #define MAX_DECODE_PACKETS_IN_QUEUE (2400 / OPUS_FRAME_DURATION_MS)
 #define MAX_SEND_PACKETS_IN_QUEUE (2400 / OPUS_FRAME_DURATION_MS)
 #define AUDIO_TESTING_MAX_DURATION_MS 10000
@@ -52,9 +52,7 @@
 #define AS_EVENT_WAKE_WORD_RUNNING          (1 << 1)
 #define AS_EVENT_AUDIO_PROCESSOR_RUNNING    (1 << 2)
 #define AS_EVENT_PLAYBACK_NOT_EMPTY         (1 << 3)
-/* // =================== 【🌟新增：蓝牙模式事件标志】 ===================
-#define AS_EVENT_BLUETOOTH_SPEAKER_RUNNING  (1 << 4) 
-// =================================================================== */
+
 
 #define AS_OPUS_GET_FRAME_DRU_ENUM(duration_ms)                   \
     ((duration_ms) == 5 ? ESP_OPUS_ENC_FRAME_DURATION_5_MS :      \
@@ -107,8 +105,7 @@ struct DebugStatistics {
 };
 
 class AudioService {
-    /* // 授予经典蓝牙高频流泵直接调取私有音频队列的最高特权
-friend void bluetooth_a2dp_sink_data_cb(const uint8_t *data, uint32_t len); */
+
 public:
     AudioService();
     ~AudioService();
@@ -142,14 +139,7 @@ public:
     void SetMusicMode(bool enable) { is_music_mode_ = enable; }
     bool GetMusicMode() const { return is_music_mode_; }
 
-  /*   // =================== 【🌟新增：蓝牙音箱对外控制接口】 ===================
-    void StartBluetoothSpeakerMode();
-    void StopBluetoothSpeakerMode();
-    void PostBluetoothData(std::unique_ptr<AudioTask> task);
-    bool IsBluetoothSpeakerRunning() const { 
-        return xEventGroupGetBits(event_group_) & AS_EVENT_BLUETOOTH_SPEAKER_RUNNING; 
-    }
-    // =================================================================== */
+
 
 private:
     AudioCodec* codec_ = nullptr;
@@ -197,10 +187,7 @@ private:
     std::atomic<bool> service_stopped_{true};
     std::atomic<bool> audio_input_need_warmup_{false};
     std::atomic<bool> is_music_mode_{false};
-    /* // =================== 【🌟新增：蓝牙私有内部控制桩】 ===================
-    bool bluetooth_speaker_initialized_ = false;
-    // ===================================================================
- */
+
     esp_timer_handle_t audio_power_timer_ = nullptr;
     std::chrono::steady_clock::time_point last_input_time_;
     std::chrono::steady_clock::time_point last_output_time_;

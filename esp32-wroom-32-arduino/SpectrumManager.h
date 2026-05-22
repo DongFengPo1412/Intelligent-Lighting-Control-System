@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <FastLED.h>
+#include "Config.h"
 
 // 宏观整个复合大矩阵的尺寸
 #define MATRIX_WIDTH  16
@@ -115,8 +116,8 @@ public:
             }
         }
 
-        // 🌟【硬件级动态功耗上限拦截盾】：锁定5V，最大电流1.2A，彻底断绝瞬态大电流导致复位或烧毁的风险
-        FastLED.setMaxPowerInVoltsAndMilliamps(5, 1200); 
+        // 🌟【硬件级动态功耗上限拦截盾】：统一使用 Config.h 中的安全功耗配置
+        FastLED.setMaxPowerInVoltsAndMilliamps(MAX_POWER_VOLTS, MAX_POWER_MA); 
 
         // 瞬间推向物理引脚发光！
         FastLED.show();
