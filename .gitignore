@@ -12,7 +12,10 @@ dependencies.lock
 .env.*
 releases/
 main/assets/lang_config.h
+esp32-s3r16n8-idf/main/assets/lang_config.h
 main/mmap_generate_emoji.h
+esp32-s3r16n8-idf/main/mmap_generate_emoji.h
+esp32-wroom-32-arduino/Config.h
 .DS_Store
 .cache
 __pycache__/
@@ -25,6 +28,12 @@ __pycache__/
 *.swp
 *.swo
 *.bin
+*.elf
+*.hex
+*.map
+*.o
+*.a
+*.d
 *.zip
 *.7z
 *.rar
