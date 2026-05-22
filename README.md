@@ -73,6 +73,8 @@
 
 Jetson Nano 默认可能占用 `/dev/ttyTHS1`，调试前需要关闭 `nvgetty` 服务，并确保串口有读写权限。
 
+* 详细的物理接线图、Jetson Nano 端 Python 环境配置、AI（人脸与手势识别）联动脚本模板以及联合调试步骤，请参阅专门的团队指南文档：[组员操作步骤指南.md](file:///c:/xiaozhi-esp32-2.2.4/esp32-wroom-32-arduino/%E7%BB%84%E5%91%98%E6%93%8D%E4%BD%9C%E6%AD%A5%E9%AA%A4%E6%8C%87%E5%8D%97.md)。
+
 ## 指令约定
 
 WROOM-32 端可以通过 USB 串口、ESP32-S3 串口或 Jetson Nano 串口接收指令：
