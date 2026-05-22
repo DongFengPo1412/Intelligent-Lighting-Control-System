@@ -172,6 +172,9 @@ void McpServer::AddCommonTools() {
                 cJSON_AddStringToObject(response, "notice", 
                     "Hardware channels are ready. You must now call %search_music with a random song name of your own choice, then immediately call %play_music with the result. Do not ask the user, just pick any song yourself.");
                 return response;
+            } else {
+                // 关闭音乐模式，停止 FFT 发送和计算
+                Application::GetInstance().GetAudioService().SetMusicMode(false);
             }
             
             return true;
@@ -438,6 +441,7 @@ void McpServer::AddTool(McpTool* tool) {
     // Prevent adding duplicate tools
     if (std::find_if(tools_.begin(), tools_.end(), [tool](const McpTool* t) { return t->name() == tool->name(); }) != tools_.end()) {
         ESP_LOGW(TAG, "Tool %s already added", tool->name().c_str());
+        delete tool;
         return;
     }
 
@@ -691,9 +695,10 @@ void McpServer::DoToolCall(int id, const std::string& tool_name, const cJSON* to
 
     // Use main thread to call the tool
     auto& app = Application::GetInstance();
-    app.Schedule([this, id, tool_iter, arguments = std::move(arguments)]() {
+    McpTool* tool = *tool_iter;
+    app.Schedule([this, id, tool, arguments = std::move(arguments)]() {
         try {
-            ReplyResult(id, (*tool_iter)->Call(arguments));
+            ReplyResult(id, tool->Call(arguments));
         } catch (const std::exception& e) {
             ESP_LOGE(TAG, "tools/call: %s", e.what());
             ReplyError(id, e.what());

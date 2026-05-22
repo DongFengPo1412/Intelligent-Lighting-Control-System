@@ -157,6 +157,7 @@ void AudioService::Initialize(AudioCodec* codec) {
 }
 
 void AudioService::Start() {
+    is_music_mode_ = false;
     service_stopped_ = false;
     xEventGroupClearBits(event_group_, AS_EVENT_AUDIO_TESTING_RUNNING | AS_EVENT_WAKE_WORD_RUNNING | AS_EVENT_AUDIO_PROCESSOR_RUNNING);
 
@@ -201,6 +202,7 @@ void AudioService::Start() {
 }
 
 void AudioService::Stop() {
+    is_music_mode_ = false;
     esp_timer_stop(audio_power_timer_);
     service_stopped_ = true;
     xEventGroupSetBits(event_group_, AS_EVENT_AUDIO_TESTING_RUNNING |
@@ -1193,22 +1195,15 @@ if (!task->pcm.empty() && is_music_mode_) {
         hann_ready = true;
     }
 
-    // 🌟🌟🌟【核心修复：滑动窗口覆盖机制，彻底绝杀内存膨胀】🌟🌟🌟
-    // 如果送进来的新 PCM 片段已经足够大，我们直接截取它末尾最新的 512 个点，用 assign 强行覆盖！
-    if ((int)task->pcm.size() >= FFT_SIZE) {
-        fft_accum.assign(task->pcm.end() - FFT_SIZE, task->pcm.end());
-    } else {
-        // 如果新来数据太小，先追加，若超出了安全边界，利落地把老数据切掉，死守缓冲区容量
-        fft_accum.insert(fft_accum.end(), task->pcm.begin(), task->pcm.end());
-        if ((int)fft_accum.size() > FFT_SIZE * 2) {
-            fft_accum.erase(fft_accum.begin(), fft_accum.end() - FFT_SIZE);
-        }
+    // 🌟🌟🌟【核心修复：滑动窗口追加与防溢出保护机制】🌟🌟🌟
+    // 将新到来的 PCM 样本追加到缓冲区，如果积压超过了 3 个完整窗口，裁剪掉多余 of 旧数据
+    fft_accum.insert(fft_accum.end(), task->pcm.begin(), task->pcm.end());
+    if ((int)fft_accum.size() > FFT_SIZE * 3) {
+        fft_accum.erase(fft_accum.begin(), fft_accum.end() - FFT_SIZE * 2);
     }
 
-    do {
-        // 经过上面的强力整形，缓冲区大小现在被死死锁在 512 附近，绝对不可能发生内存过载
-        if ((int)fft_accum.size() < FFT_SIZE) break;
-
+    // 🌟🌟🌟【核心修复：通过 while 循环连续消耗样本以实现 100% 数据覆盖】🌟🌟🌟
+    while ((int)fft_accum.size() >= FFT_SIZE) {
         // 先算RMS，静音直接归零并清空缓冲
         float sum_sq = 0.0f;
         for (int i = 0; i < FFT_SIZE; i++) {
@@ -1228,7 +1223,8 @@ if (!task->pcm.empty() && is_music_mode_) {
         // 限速控制
         frame_skip_counter++;
         if (frame_skip_counter < SEND_EVERY) {
-            break; 
+            fft_accum.erase(fft_accum.begin(), fft_accum.begin() + FFT_SIZE);
+            continue; 
         }
         frame_skip_counter = 0;
 
@@ -1311,10 +1307,9 @@ if (!task->pcm.empty() && is_music_mode_) {
                  bands[8],  bands[9],  bands[10], bands[11],
                  bands[12], bands[13], bands[14], bands[15]);
 
-        // 🌟【一语乾坤】：既然前面做了边界对齐，这里每次用完直接彻底清空，片甲不留！
-        fft_accum.clear();
-
-    } while (0);
+        // 🌟【核心修复：滑动窗口移位】🌟
+        fft_accum.erase(fft_accum.begin(), fft_accum.begin() + FFT_SIZE);
+    }
 
 } else if (!is_music_mode_) {
     // 非音乐模式静置

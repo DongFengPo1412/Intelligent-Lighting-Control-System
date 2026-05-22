@@ -35,8 +35,8 @@ static void init_cross_board_uart()
         .source_clk = UART_SCLK_DEFAULT,         // 默认时钟源
     };
 
-    // 安装驱动：设置 RX 缓冲区，无 TX 缓冲区（采用阻塞发送模式即可）
-    ESP_ERROR_CHECK(uart_driver_install(S3_UART_NUM, UART_BUF_SIZE * 2, 0, 0, NULL, 0));
+    // 安装驱动：设置 RX 缓冲区，设置 TX 缓冲区（启用环形缓冲区模式，避免阻塞发送线程）
+    ESP_ERROR_CHECK(uart_driver_install(S3_UART_NUM, UART_BUF_SIZE * 2, UART_BUF_SIZE * 2, 0, NULL, 0));
     // 配置串口基础参数
     ESP_ERROR_CHECK(uart_param_config(S3_UART_NUM, &uart_config));
     // 将物理引脚分配给 UART1 模块

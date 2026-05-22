@@ -98,7 +98,7 @@ void handleS3Communication() {
 
                     // 4. 防偷袭去抖（针对非15模式下的正常心跳0防御）
                     if (cmd == 0) {
-                        if (currentMode != 0 && (millis() - last_valid_mode_time < 4000) || Serial1.available() > 0) {
+                        if (currentMode != 0 && ((millis() - last_valid_mode_time < 4000) || Serial1.available() > 0)) {
                             Serial.printf(">>> [防重置铁闸]: 拦截常规状态心跳误发指令 0！\n");
                             serial1Buffer = "";
                             return; 
@@ -242,6 +242,10 @@ void handleUSBSerialCommunication() {
 }
 
 void setup() {
+    // 预分配串口接收缓冲区，从物理层面掐死高频数据下的堆碎片产生
+    serial1Buffer.reserve(128);
+    serial2Buffer.reserve(128);
+
     // 1. 初始化与 PC 串口调试 (UART0)
     Serial.begin(115200);
     

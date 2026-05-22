@@ -6,6 +6,7 @@
 #include <condition_variable>
 #include <chrono>
 #include <mutex>
+#include <atomic>
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
@@ -192,10 +193,10 @@ private:
 
     bool wake_word_initialized_ = false;
     bool audio_processor_initialized_ = false;
-    bool voice_detected_ = false;
-    bool service_stopped_ = true;
-    bool audio_input_need_warmup_ = false;
-    bool is_music_mode_ = false;
+    std::atomic<bool> voice_detected_{false};
+    std::atomic<bool> service_stopped_{true};
+    std::atomic<bool> audio_input_need_warmup_{false};
+    std::atomic<bool> is_music_mode_{false};
     /* // =================== 【🌟新增：蓝牙私有内部控制桩】 ===================
     bool bluetooth_speaker_initialized_ = false;
     // ===================================================================

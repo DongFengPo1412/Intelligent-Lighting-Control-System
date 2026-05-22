@@ -120,7 +120,7 @@ public:
         value_ = value;
     }
 
-    std::string to_json() const {
+    cJSON* to_cjson_object() const {
         cJSON *json = cJSON_CreateObject();
         
         if (type_ == kPropertyTypeBoolean) {
@@ -145,12 +145,15 @@ public:
                 cJSON_AddStringToObject(json, "default", value<std::string>().c_str());
             }
         }
-        
+        return json;
+    }
+
+    std::string to_json() const {
+        cJSON *json = to_cjson_object();
         char *json_str = cJSON_PrintUnformatted(json);
         std::string result(json_str);
         cJSON_free(json_str);
         cJSON_Delete(json);
-        
         return result;
     }
 };
@@ -188,19 +191,20 @@ public:
         return required;
     }
 
-    std::string to_json() const {
+    cJSON* to_cjson_object() const {
         cJSON *json = cJSON_CreateObject();
-        
         for (const auto& property : properties_) {
-            cJSON *prop_json = cJSON_Parse(property.to_json().c_str());
-            cJSON_AddItemToObject(json, property.name().c_str(), prop_json);
+            cJSON_AddItemToObject(json, property.name().c_str(), property.to_cjson_object());
         }
-        
+        return json;
+    }
+
+    std::string to_json() const {
+        cJSON *json = to_cjson_object();
         char *json_str = cJSON_PrintUnformatted(json);
         std::string result(json_str);
         cJSON_free(json_str);
         cJSON_Delete(json);
-        
         return result;
     }
 };
@@ -239,7 +243,7 @@ public:
         cJSON *input_schema = cJSON_CreateObject();
         cJSON_AddStringToObject(input_schema, "type", "object");
         
-        cJSON *properties = cJSON_Parse(properties_.to_json().c_str());
+        cJSON *properties = properties_.to_cjson_object();
         cJSON_AddItemToObject(input_schema, "properties", properties);
         
         if (!required.empty()) {

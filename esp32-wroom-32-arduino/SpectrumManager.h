@@ -18,41 +18,11 @@ private:
 
     // 精准适配 4 块 8x8 纯直连拼接布局的物理索引解算器
     int getMatrixIndex(int x, int y) {
-        // 安全边界保护：防止非正常解算导致内存越界崩溃
         if (x < 0 || x >= MATRIX_WIDTH || y < 0 || y >= MATRIX_HEIGHT) return 0;
-
-        int local_x = 0;    // 子板内的相对 X (0~7)
-        int local_y = 0;    // 子板内的相对 Y (0~7)
-        int base_index = 0; // 子板在总一维链条中的起始偏移量
-
-        // 1. 判定纵向区间（上半部分还是下半部分）
-        if (y < 8) {
-            // 上半部分：可能是面板 1 或 面板 2
-            local_y = y; 
-            if (x < 8) {
-                local_x = x;
-                base_index = 0;      // 面板 1 拥有前 64 颗灯 (0~63)
-            } else {
-                local_x = x - 8;
-                base_index = 64;     // 面板 2 拥有次 64 颗灯 (64~127)
-            }
-        } else {
-            // 下半部分：可能是面板 3 或 面板 4
-            local_y = y - 8; 
-            if (x < 8) {
-                local_x = x;
-                base_index = 128;    // 面板 3 拥有第三批 64 颗灯 (128~191)
-            } else {
-                local_x = x - 8;
-                base_index = 192;    // 面板 4 拥有最后一批 64 颗灯 (192~255)
-            }
-        }
-
-        // 2. 在具体的 8x8 子面板内部，遵循纯直连走线逻辑（不分奇偶行，统一从左往右）
-        int local_index = local_y * 8 + local_x;
-
-        // 3. 最终串联总索引 = 子板起始偏移 + 子板内部纯直连局部索引
-        return base_index + local_index;
+        int panelRow = y / 8;
+        int panelCol = x / 8;
+        int base_index = (panelRow * 2 + panelCol) * 64;
+        return base_index + (y % 8) * 8 + (x % 8);
     }
 
 public:
@@ -66,26 +36,24 @@ public:
     }
 
     // 核心流解析状态机：揉碎主板发来的 "f,beat,b0,b1..." 裸字符串
-    void parseSerialData(String cmd) {
+    // 采用 sscanf 无分配就地解析，彻底消灭 String substring 产生的堆内存碎片
+    void parseSerialData(const String& cmd) {
         if (!cmd.startsWith("f,")) return;
-        cmd = cmd.substring(2); // 剥离 "f," 协议头，留下 "beat,b0,b1..."
-
-        int index = 0;
-        int pos = 0;
         
-        // 循环 17 次切片（1个beat + 16个频带）
-        while ((pos = cmd.indexOf(',')) != -1 && index < 17) {
-            int val = cmd.substring(0, pos).toInt();
-            if (index == 0) {
-                _is_beat = val;
-            } else {
-                _bands[index - 1] = val;
+        int beat = 0;
+        int b[16] = {0};
+        int parsed = sscanf(cmd.c_str(), "f,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
+                            &beat,
+                            &b[0], &b[1], &b[2], &b[3],
+                            &b[4], &b[5], &b[6], &b[7],
+                            &b[8], &b[9], &b[10], &b[11],
+                            &b[12], &b[13], &b[14], &b[15]);
+        
+        if (parsed == 17) {
+            _is_beat = beat;
+            for (int i = 0; i < 16; i++) {
+                _bands[i] = b[i];
             }
-            cmd = cmd.substring(pos + 1);
-            index++;
-        }
-        if (index == 17) {
-            _bands[15] = cmd.toInt(); 
         }
         // 🌟【最左列低频实时补偿】：如果最左边一列因为主板直流分量过滤导致死区
         // 我们让它动态影子克隆第 1 列的次低音震荡，同时在鼓点爆发(beat==1)时强行让它满格冲顶！
