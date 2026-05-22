@@ -12,6 +12,7 @@ CRGB leds[NUM_LEDS];
 uint8_t gHue = 0;              
 int currentMode = 0;          // 当前运行模式
 int lastMode = -1;            
+bool blinkerInitialized = false; // Blinker 初始化状态
 String serial1Buffer = "";    // 接收 S3 (大脑) 的指令
 String serial2Buffer = "";    // 接收 NVIDIA Jetson Nano (人脸与手势识别) 的指令 (UART2)
 
@@ -263,22 +264,35 @@ void setup() {
     // 3. 联网 (Blinker 远程控制)
     WiFi.begin(ssid, pswd);
     Serial.print(">>> [系统]: 正在连接 WiFi");
-    while (WiFi.status() != WL_CONNECTED) {
+    unsigned long startAttemptTime = millis();
+    while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < 15000) {
         delay(500);
         Serial.print(".");
     }
-    Serial.println("\n>>> [系统]: WiFi 已连接");
 
     // 4. 初始化 FastLED 与 logic 模块
     initDisplay();    // 内部已包含 FastLED.addLeds
-    initBlinker();    
+    
+    if (WiFi.status() == WL_CONNECTED) {
+        Serial.println("\n>>> [系统]: WiFi 已连接");
+        initBlinker();
+        blinkerInitialized = true;
+    } else {
+        Serial.println("\n>>> [系统]: WiFi 连接超时，跳过 Blinker 初始化，进入离线工作模式");
+    }
     
     Serial.println("--- [UESTC 智能灯阵执行端: WROOM-32 已启动] ---");
 }
 
 void loop() {
     // 1. Blinker 物联网心跳
-    Blinker.run(); 
+    if (blinkerInitialized) {
+        Blinker.run(); 
+    } else if (WiFi.status() == WL_CONNECTED) {
+        Serial.println("\n>>> [系统]: WiFi 在后台已连接，正在初始化 Blinker IoT...");
+        initBlinker();
+        blinkerInitialized = true;
+    }
 
     // 2. 监听 S3 (大脑) 指令
     handleS3Communication(); 

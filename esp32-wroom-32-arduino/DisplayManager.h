@@ -147,6 +147,7 @@ static void runDisplayEffects(int mode) {
 inline void initDisplay() {
     // 根据 Config.h 中的引脚和数量初始化 FastLED
     FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
+    FastLED.setMaxPowerInVoltsAndMilliamps(5, 1500);
     FastLED.setBrightness(BRIGHTNESS);
     FastLED.clear();
     FastLED.show();

@@ -72,7 +72,10 @@ inline void runSnake() {
         }
         
         if(snakeX[0] == foodX && snakeY[0] == foodY) {
-            snakeScore++; snakeLen++;
+            snakeScore++;
+            if (snakeLen < 256) {
+                snakeLen++;
+            }
             snakeSpeed = max(80, 450 - (snakeScore * 15)); 
             foodX = random(16); foodY = random(16);
         }
@@ -132,6 +135,7 @@ inline void runTetris() {
                     tetrisSpeed = max(100, tetrisSpeed - 30);
                     for(int ty = y; ty > 0; ty--) 
                         for(int tx = BOARD_LEFT; tx <= BOARD_RIGHT; tx++) tetrisField[ty][tx] = tetrisField[ty-1][tx];
+                    for(int tx = BOARD_LEFT; tx <= BOARD_RIGHT; tx++) tetrisField[0][tx] = 0;
                     y++; 
                 }
             }
