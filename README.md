@@ -12,7 +12,8 @@
 ```text
 .
 ├─ esp32-s3r16n8-idf/          # ESP32-S3R16N8 / ESP-IDF 工程
-├─ esp32-wroom-32-arduino/     # ESP32-WROOM-32 / Arduino 工程
+├─ esp32-wroom-32-arduino/     # ESP32-WROOM-32 / Arduino 执行端工程
+├─ jetson-nano-py36/           # Jetson Nano 端 AI（人脸与手势识别）Python 工程
 ├─ .gitignore
 └─ README.md
 ```
@@ -35,6 +36,23 @@
 - 支持 USB 串口调试，可直接发送数字模式指令。
 - 支持音乐频谱模式，解析 `f,beat,b0,b1,...` 形式的频谱数据并实时刷新灯阵。
 - 内置贪吃蛇和俄罗斯方块小游戏，并可通过 Blinker 按键控制方向、旋转和下落。
+
+### Jetson Nano AI 视觉交互端
+
+该部分位于 `jetson-nano-py36/`，使用 Python 3.6+ 开发，利用 OpenCV 和 MediaPipe 在 Jetson Nano 上运行实时的 AI 视觉检测，并将结果通过物理串口（`/dev/ttyTHS1`）下发给 WROOM-32 执行端：
+
+- **`run_gesture.py`（基础手势识别）**：利用 MediaPipe Hands，统计伸出手指的数量（0~5），并发送裸数字指令控制灯光模式。
+- **`run_gesture2.py`（特定手势映射）**：识别特定手势并输出对应的高阶指令：
+  - 伸出所有手指（摊手） ➔ 发送 `5` (呼吸极光模式)
+  - 胜利✌️手势 ➔ 发送 `6` (流星划过模式)
+  - 握拳 ➔ 发送 `7` (繁星点点模式)
+  - 其余情况输出伸出的手指个数。
+- **`face_system_cn.py` / `face_system.py`（人脸注册与识别系统）**：
+  - 基于 OpenCV Haar-Cascade 与 LBPH 人脸识别算法，实现低资源消耗下的人脸实时对比。
+  - 识别到 `ylk` ➔ 发送 `1`（纯红模式）
+  - 识别到 `zzc` ➔ 发送 `2`（纯蓝模式）
+  - 画面无脸时自动清空发送状态，减少无用串口流量。
+  - 支持热键交互：在视频窗口按 `S` 录入新面孔（终端交互输入名字），按 `T` 在线重新训练模型，按 `Q` 退出。
 
 ## Arduino 工程使用说明
 
@@ -64,16 +82,41 @@
 - 两块板子需要共地。
 - 串口波特率为 `115200`。
 
-### 与 Jetson Nano 通信
+### 与 Jetson Nano 通信及操作说明
 
-- Jetson Nano J41 Pin 8/TX 接 WROOM-32 GPIO25。
-- Jetson Nano J41 Pin 10/RX 接 WROOM-32 GPIO26。
-- Jetson Nano GND 接 WROOM-32 GND。
-- 串口波特率为 `115200`。
+#### 1. 物理引脚连接
+由于 ESP32 当前使用 USB 物理线供电，且其 `VIN` 接灯板，为防止双路 5V 电平倒灌发生冲突，**切勿连接 Jetson Nano 的 5V 电源线到 ESP32**。仅需连接以下 3 根杜邦线：
+* **Jetson Nano J41 Pin 8 (UART1_TX)** ➔ **ESP32 GPIO 25** (作为 RX2)
+* **Jetson Nano J41 Pin 10 (UART1_RX)** ➔ **ESP32 GPIO 26** (作为 TX2)
+* **Jetson Nano J41 Pin 9 (GND)** ➔ **ESP32 GND** (共地，必须连接)
 
-Jetson Nano 默认可能占用 `/dev/ttyTHS1`，调试前需要关闭 `nvgetty` 服务，并确保串口有读写权限。
+#### 2. Jetson Nano 串口与系统防占配置
+Jetson Nano 的后台 `nvgetty` 串口终端服务会占用 `/dev/ttyTHS1`。运行前需在 Jetson 端将其关闭：
+```bash
+# 停止并关闭后台串口终端监听
+sudo systemctl stop nvgetty
+sudo systemctl disable nvgetty
+# 将当前用户加入 dialout 与 video 组以实现免 sudo 访问串口与摄像头
+sudo usermod -aG dialout,video $USER
+sudo udevadm trigger
+sudo reboot
+```
 
-* 详细的物理接线图、Jetson Nano 端 Python 环境配置、AI（人脸与手势识别）联动脚本模板以及联合调试步骤，请参阅专门的团队指南文档：[组员操作步骤指南.md](file:///c:/xiaozhi-esp32-2.2.4/esp32-wroom-32-arduino/%E7%BB%84%E5%91%98%E6%93%8D%E4%BD%9C%E6%AD%A5%E9%AA%A4%E6%8C%87%E5%8D%97.md)。
+#### 3. 运行 Python AI 控制程序
+进入 `jetson-nano-py36/` 目录，执行以下命令：
+```bash
+# 1. 开启读写权限
+sudo chmod 666 /dev/ttyTHS1
+
+# 2. 运行手指个数识别模式
+python3 run_gesture.py
+
+# 3. 运行高级特定手势识别模式
+python3 run_gesture2.py
+
+# 4. 运行人脸录入与识别系统 (按 S 保存新脸，T 训练模型，Q 退出)
+python3 face_system_cn.py
+```
 
 ## 指令约定
 

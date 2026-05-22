@@ -42,3 +42,8 @@ __pycache__/
 *.tgz
 mmap_generate_*.h
 .clangd
+
+# Jetson Nano face recognition data
+jetson-nano-py36/faces/**/*.jpg
+jetson-nano-py36/faces/**/*.png
+
